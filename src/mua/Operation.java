@@ -25,6 +25,16 @@ public class Operation {
         res.put("and", 2);
         res.put("or", 2);
         res.put("not", 1);
+        res.put("isnumber", 1);
+        res.put("isword", 1);
+        res.put("islist", 1);
+        res.put("isbool", 1);
+        res.put("isempty", 1);
+        res.put("islist", 1);
+        res.put("isbool", 1);
+        res.put("isempty", 1);
+        res.put("run", 1);
+        res.put("if", 3);
 
         return res;
     }
@@ -65,11 +75,125 @@ public class Operation {
                 return op_Or();
             case "not":
                 return op_Not();
+            case "isnumber":
+                return op_Isnumber();
+            case "isword":
+                return op_Isword();
+            case "islist":
+                return op_Islist();
+            case "isbool":
+                return op_Isbool();
+            case "isempty":
+                return op_Isempty();
+            case "run":
+                return op_Run();
+            case "if":
+                return op_If();
 
             default:
                 break;
         }
         return new String();
+    }
+
+    private static String RunProcess(String runls) {
+        // 执行空表，直接返回空表
+        if (Value.value_is_Empty(runls))
+            return "[]";
+        // 获得list内容
+        String[] runcode = runls.substring(1, runls.length() - 1).split(" ");
+
+        // 单元素表，只有一个word，没有op，返回该word
+        if (runcode.length == 1) {
+            return runcode[0];
+        }
+
+        for (int i = 0; i < runcode.length; i++) {
+            Parser.Process(runcode[i]);
+        }
+        return null;
+    }
+
+    private static String op_If() {
+        String[] parmList;
+        parmList = getParmList("if");
+        // [0] -> <list2>; [1] -> <list1>; [2] -> <bool>
+
+        // 格式检查
+        // 类比scheme，非false均为true，bool不作类型检查
+        // if (!Value.isBool(parmList[2])){
+        // System.out.println("");
+        // }
+        if (!(Value.isList(parmList[1]) && Value.isList(parmList[0]))) {
+            System.out.println("ERROR: operator \"if\" needs lists as oprands!");
+            System.exit(-1);
+        }
+
+        String runlist;
+
+        if (!parmList[2].equals("false")) {
+            // <bool>为真，执行<list1>
+            runlist = parmList[1];
+        } else {
+            // <bool>为假，执行<list2>
+            runlist = parmList[0];
+        }
+
+        // if 的runlist处理与run共用，同为伪返回机制
+        return RunProcess(runlist);
+    }
+
+    private static String op_Run() {
+        /*
+         * run：伪返回；由于压栈机制的保证，在run中执行的运算结果将自动进栈与其余op进行运算；
+         * 而run操作本身不需要返回值进栈，故直接返回null，并在上一层解释中忽略null值的进栈
+         * 这样，在实现层，run没有真正返回值，但在运行时能够表现为是run的返回值参与了运算
+         * 
+         * 更新：对空表和单元素表的处理，分别返回空表和单元素，此时run有实现上的返回值； 而表内存在op时，仍是伪返回，实现上的返回值为null
+         */
+        String[] parmList;
+        parmList = getParmList("run");
+
+        if (!Value.isList(parmList[0])) {
+            System.out.println("ERROR: \"run\" needs a list as oprand!");
+            System.exit(-1);
+        }
+
+        return RunProcess(parmList[0]);
+    }
+
+    private static String op_Islist() {
+        String[] parmList;
+        parmList = getParmList("islist");
+        return String.valueOf(Value.isList(parmList[0]));
+    }
+
+    private static String op_Isempty() {
+        String[] parmList;
+        parmList = getParmList("isempty");
+
+        return String.valueOf(Value.value_is_Empty(parmList[0]));
+    }
+
+    private static String op_Isbool() {
+        String[] parmList;
+        parmList = getParmList("isbool");
+        return String.valueOf(Value.isBool(parmList[0]));
+    }
+
+    private static String op_Isword() {
+        String[] parmList;
+        parmList = getParmList("isword");
+
+        // 个人李姐，非表都为字
+        return String.valueOf(Value.isWord(parmList[0]));
+    }
+
+    private static String op_Isnumber() {
+        String[] parmList;
+        parmList = getParmList("isnumber");
+
+        return String.valueOf(Value.isNumber(parmList[0]));
     }
 
     private static String op_Not() {
@@ -97,14 +221,17 @@ public class Operation {
         String[] parmList;
         parmList = getParmList("make");
 
-        if (!(('a' <= parmList[1].charAt(0) && parmList[1].charAt(0) <= 'z')
-                || ('A' <= parmList[1].charAt(0) && parmList[1].charAt(0) <= 'Z'))) {
+        // make条件：前为name，且不与基本operation重名
+        if (!Value.isName(parmList[1])) {
             System.out.println("ERROR: In make, \"" + parmList[1] + "\" is not a name.");
+            System.exit(-1);
+        } else if (Operation.opMap.containsKey(parmList[1])) {
+            System.out.println("ERROR: In make, \"" + parmList[1] + "\" is a keyword!");
             System.exit(-1);
         }
 
         if (!Value.makeName(parmList[1], parmList[0])) {
-            System.out.println("Make failed! The name \"" + parmList[1] + "\" has existed.");
+            System.out.println("Make failed!");
         }
 
         return parmList[0];
@@ -115,7 +242,7 @@ public class Operation {
         parmList = getParmList("thing");
 
         if (!Value.hasName(parmList[0])) {
-            System.out.println("ERROR: In thing, \"" + parmList[0] + "\" is not a name.");
+            System.out.println("ERROR: In thing, name \"" + parmList[0] + "\" has not bound to value.");
             System.exit(-1);
         }
 
@@ -124,9 +251,12 @@ public class Operation {
 
     private static String op_Print() {
         String[] parmList;
-        parmList = getParmList("thing");
+        parmList = getParmList("print");
 
-        System.out.println(parmList[0]);
+        if (parmList[0].isEmpty())
+            System.out.println("null");
+        else
+            System.out.println(parmList[0]);
 
         return parmList[0];
     }
@@ -134,9 +264,10 @@ public class Operation {
     private static String op_Read() {
         String res;
 
+        // 使用main中的input输入
         while (true) {
             res = Main.input.next();
-            if (Value.isWord(res)) {
+            if (res.charAt(0) == '\"') {
                 res = res.substring(1);
                 break;
             } else if (Value.isNumber(res) || Value.isBool(res)) {
@@ -145,8 +276,6 @@ public class Operation {
                 System.out.println("Your input in read is not a word or number! Please retry.");
             }
         }
-
-        // 这里close会导致Main函数中的Scanner发生异常
 
         return res;
     }
@@ -271,7 +400,7 @@ public class Operation {
         String[] parmList;
         parmList = getParmList("erase");
 
-        String res = "null";
+        String res = "";
         if (Value.hasName(parmList[0])) {
             res = Value.getValue(parmList[0]);
             Value.eraseName(parmList[0]);
@@ -284,7 +413,7 @@ public class Operation {
         String[] parmList;
         parmList = getParmList("isname");
 
-        if (Value.hasName(parmList[0]))
+        if (Value.isName(parmList[0]))
             return "true";
         else
             return "false";
