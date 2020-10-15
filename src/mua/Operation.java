@@ -22,6 +22,10 @@ public class Operation {
         res.put("eq", 2);
         res.put("gt", 2);
         res.put("lt", 2);
+        res.put("and", 2);
+        res.put("or", 2);
+        res.put("not", 1);
+
         return res;
     }
 
@@ -55,11 +59,28 @@ public class Operation {
                 return op_Gt();
             case "lt":
                 return op_Lt();
+            case "and":
+                return op_And();
+            case "or":
+                return op_Or();
+            case "not":
+                return op_Not();
 
             default:
                 break;
         }
         return new String();
+    }
+
+    private static String op_Not() {
+        String[] parmList;
+        parmList = getParmList("not");
+
+        // 类scheme，非false都视为true
+        if (parmList[0].equals("false"))
+            return "true";
+
+        return "false";
     }
 
     private static String[] getParmList(String op) {
@@ -311,6 +332,38 @@ public class Operation {
             return String.valueOf(left < right);
         } else {
             return String.valueOf(parmList[1].compareTo(parmList[0]) < 0);
+        }
+    }
+
+    private static String op_And() {
+        String[] parmList;
+        parmList = getParmList("and");
+
+        // 类似scheme，非false全部取true
+        if (Value.isBool(parmList[0]) && Value.isBool(parmList[0])) {
+            boolean oprand1, oprand2;
+            oprand1 = !parmList[0].equals("false");
+            oprand2 = !parmList[1].equals("false");
+
+            return String.valueOf(oprand1 & oprand2);
+        } else {
+            return "true";
+        }
+    }
+
+    private static String op_Or() {
+        String[] parmList;
+        parmList = getParmList("or");
+
+        // same as and
+        if (Value.isBool(parmList[0]) && Value.isBool(parmList[0])) {
+            boolean oprand1, oprand2;
+            oprand1 = !parmList[0].equals("false");
+            oprand2 = !parmList[1].equals("false");
+
+            return String.valueOf(oprand1 | oprand2);
+        } else {
+            return "true";
         }
     }
 }
