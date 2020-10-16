@@ -31,8 +31,7 @@ public class Processor {
 
             // 正在读取中缀表达式，注意处理多重()
             if (infixlevel > 0) {
-                readInfix(in);
-                return "";
+                return readInfix(in);
             }
 
             if (in.charAt(0) == '\"') {
@@ -51,8 +50,7 @@ public class Processor {
             } else if (in.charAt(0) == '(') {
                 // 以 ( 开头，需要处理中缀表达式
                 // 先将整个括号读取作为一个字符串，再对该字符串进行处理
-                readInfix(in);
-                return "";
+                return readInfix(in);
             } else {
                 // 字母开头, 视为operator
                 if (!Operation.opMap.containsKey(in)) {
@@ -79,7 +77,7 @@ public class Processor {
         return s.length() - s.replace(c, "").length();
     }
 
-    private void readInfix(String in) {
+    private String readInfix(String in) {
         infixlevel += countInString(in, "(");
         infixlevel -= countInString(in, ")");
         if (infixstr.isEmpty()) {
@@ -89,12 +87,13 @@ public class Processor {
         }
         if (infixlevel == 0) {
             // 读取中缀表达式完毕，对其进行处理，并将整个的结果返回压栈
-            // TODO：处理返回值
-            String res = Infix.infixProcess(infixstr);
+            String res = new String();
+            res = Infix.infixProcess(infixstr);
+            infixstr = "";
+            return addValueProcess(res);
         }
+        return "";
     }
-
-    // TODO：中缀表达式处理放进infix类
 
     /**
      * 递归处理添加value的操作 需要递归的原因在于value入栈后可能触发操作 返回值仍需要继续入栈
