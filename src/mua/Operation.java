@@ -39,56 +39,56 @@ public class Operation {
         return res;
     }
 
-    public static String Process(final String op) {
+    public static String Process(final String op, String[] parmList) {
         switch (op) {
             case "make":
-                return op_Make();
+                return op_Make(parmList);
             case "thing":
-                return op_Thing();
+                return op_Thing(parmList);
             case "print":
-                return op_Print();
+                return op_Print(parmList);
             case "read":
                 return op_Read();
             case "add":
-                return op_Add();
+                return op_Add(parmList);
             case "sub":
-                return op_Sub();
+                return op_Sub(parmList);
             case "mul":
-                return op_Mul();
+                return op_Mul(parmList);
             case "div":
-                return op_Div();
+                return op_Div(parmList);
             case "mod":
-                return op_Mod();
+                return op_Mod(parmList);
             case "erase":
-                return op_Erase();
+                return op_Erase(parmList);
             case "isname":
-                return op_Isname();
+                return op_Isname(parmList);
             case "eq":
-                return op_Eq();
+                return op_Eq(parmList);
             case "gt":
-                return op_Gt();
+                return op_Gt(parmList);
             case "lt":
-                return op_Lt();
+                return op_Lt(parmList);
             case "and":
-                return op_And();
+                return op_And(parmList);
             case "or":
-                return op_Or();
+                return op_Or(parmList);
             case "not":
-                return op_Not();
+                return op_Not(parmList);
             case "isnumber":
-                return op_Isnumber();
+                return op_Isnumber(parmList);
             case "isword":
-                return op_Isword();
+                return op_Isword(parmList);
             case "islist":
-                return op_Islist();
+                return op_Islist(parmList);
             case "isbool":
-                return op_Isbool();
+                return op_Isbool(parmList);
             case "isempty":
-                return op_Isempty();
+                return op_Isempty(parmList);
             case "run":
-                return op_Run();
+                return op_Run(parmList);
             case "if":
-                return op_If();
+                return op_If(parmList);
 
             default:
                 break;
@@ -108,15 +108,15 @@ public class Operation {
             return runcode[0];
         }
 
+        Processor processor = new Processor();
+        String res = new String();
         for (int i = 0; i < runcode.length; i++) {
-            Parser.Process(runcode[i]);
+            res = processor.Process(runcode[i]);
         }
-        return null;
+        return res;
     }
 
-    private static String op_If() {
-        String[] parmList;
-        parmList = getParmList("if");
+    private static String op_If(String[] parmList) {
         // [0] -> <list2>; [1] -> <list1>; [2] -> <bool>
 
         // 格式检查
@@ -143,16 +143,10 @@ public class Operation {
         return RunProcess(runlist);
     }
 
-    private static String op_Run() {
+    private static String op_Run(String[] parmList) {
         /*
-         * run：伪返回；由于压栈机制的保证，在run中执行的运算结果将自动进栈与其余op进行运算；
-         * 而run操作本身不需要返回值进栈，故直接返回null，并在上一层解释中忽略null值的进栈
-         * 这样，在实现层，run没有真正返回值，但在运行时能够表现为是run的返回值参与了运算
-         * 
-         * 更新：对空表和单元素表的处理，分别返回空表和单元素，此时run有实现上的返回值； 而表内存在op时，仍是伪返回，实现上的返回值为null
+         * 更新：重构Parser后，采用实例化一个新的processor来处理运行代码，在实现层面使得run操作有了返回值
          */
-        String[] parmList;
-        parmList = getParmList("run");
 
         if (!Value.isList(parmList[0])) {
             System.out.println("ERROR: \"run\" needs a list as oprand!");
@@ -162,44 +156,28 @@ public class Operation {
         return RunProcess(parmList[0]);
     }
 
-    private static String op_Islist() {
-        String[] parmList;
-        parmList = getParmList("islist");
+    private static String op_Islist(String[] parmList) {
         return String.valueOf(Value.isList(parmList[0]));
     }
 
-    private static String op_Isempty() {
-        String[] parmList;
-        parmList = getParmList("isempty");
-
+    private static String op_Isempty(String[] parmList) {
         return String.valueOf(Value.value_is_Empty(parmList[0]));
     }
 
-    private static String op_Isbool() {
-        String[] parmList;
-        parmList = getParmList("isbool");
+    private static String op_Isbool(String[] parmList) {
         return String.valueOf(Value.isBool(parmList[0]));
     }
 
-    private static String op_Isword() {
-        String[] parmList;
-        parmList = getParmList("isword");
-
+    private static String op_Isword(String[] parmList) {
         // 个人李姐，非表都为字
         return String.valueOf(Value.isWord(parmList[0]));
     }
 
-    private static String op_Isnumber() {
-        String[] parmList;
-        parmList = getParmList("isnumber");
-
+    private static String op_Isnumber(String[] parmList) {
         return String.valueOf(Value.isNumber(parmList[0]));
     }
 
-    private static String op_Not() {
-        String[] parmList;
-        parmList = getParmList("not");
-
+    private static String op_Not(String[] parmList) {
         // 类scheme，非false都视为true
         if (parmList[0].equals("false"))
             return "true";
@@ -207,20 +185,7 @@ public class Operation {
         return "false";
     }
 
-    private static String[] getParmList(String op) {
-        int parmNum = opMap.get(op);
-        String[] res = new String[parmNum];
-
-        for (int i = 0; i < parmNum; i++) {
-            res[i] = Parser.nameStack.pop();
-        }
-        return res;
-    }
-
-    private static String op_Make() {
-        String[] parmList;
-        parmList = getParmList("make");
-
+    private static String op_Make(String[] parmList) {
         // make条件：前为name，且不与基本operation重名
         if (!Value.isName(parmList[1])) {
             System.out.println("ERROR: In make, \"" + parmList[1] + "\" is not a name.");
@@ -237,10 +202,7 @@ public class Operation {
         return parmList[0];
     }
 
-    private static String op_Thing() {
-        String[] parmList;
-        parmList = getParmList("thing");
-
+    private static String op_Thing(String[] parmList) {
         if (!Value.hasName(parmList[0])) {
             System.out.println("ERROR: In thing, name \"" + parmList[0] + "\" has not bound to value.");
             System.exit(-1);
@@ -249,10 +211,7 @@ public class Operation {
         return Value.getValue(parmList[0]);
     }
 
-    private static String op_Print() {
-        String[] parmList;
-        parmList = getParmList("print");
-
+    private static String op_Print(String[] parmList) {
         if (parmList[0].isEmpty())
             System.out.println("null");
         else
@@ -280,10 +239,7 @@ public class Operation {
         return res;
     }
 
-    private static String op_Add() {
-        String[] parmList;
-        parmList = getParmList("add");
-
+    private static String op_Add(String[] parmList) {
         if (!Value.isNumber(parmList[0]) || !Value.isNumber(parmList[1])) {
             System.out.println("ERROR: In add, a vulue is not a number!");
             System.exit(-1);
@@ -302,10 +258,7 @@ public class Operation {
         return new String();
     }
 
-    private static String op_Sub() {
-        String[] parmList;
-        parmList = getParmList("sub");
-
+    private static String op_Sub(String[] parmList) {
         if (!Value.isNumber(parmList[0]) || !Value.isNumber(parmList[1])) {
             System.out.println("ERROR: In sub, a vulue is not a number!");
             System.exit(-1);
@@ -324,10 +277,7 @@ public class Operation {
         return new String();
     }
 
-    private static String op_Mul() {
-        String[] parmList;
-        parmList = getParmList("mul");
-
+    private static String op_Mul(String[] parmList) {
         if (!Value.isNumber(parmList[0]) || !Value.isNumber(parmList[1])) {
             System.out.println("ERROR: In mul, a vulue is not a number!");
             System.exit(-1);
@@ -346,10 +296,7 @@ public class Operation {
         return new String();
     }
 
-    private static String op_Div() {
-        String[] parmList;
-        parmList = getParmList("div");
-
+    private static String op_Div(String[] parmList) {
         if (!Value.isNumber(parmList[0]) || !Value.isNumber(parmList[1])) {
             System.out.println("ERROR: In div, a vulue is not a number!");
             System.exit(-1);
@@ -368,10 +315,7 @@ public class Operation {
         return new String();
     }
 
-    private static String op_Mod() {
-        String[] parmList;
-        parmList = getParmList("mod");
-
+    private static String op_Mod(String[] parmList) {
         if (!Value.isNumber(parmList[0]) || !Value.isNumber(parmList[1])) {
             System.out.println("ERROR: In mod, a vulue is not a number!");
             System.exit(-1);
@@ -396,10 +340,7 @@ public class Operation {
         return new String();
     }
 
-    private static String op_Erase() {
-        String[] parmList;
-        parmList = getParmList("erase");
-
+    private static String op_Erase(String[] parmList) {
         String res = "";
         if (Value.hasName(parmList[0])) {
             res = Value.getValue(parmList[0]);
@@ -409,20 +350,14 @@ public class Operation {
         return res;
     }
 
-    private static String op_Isname() {
-        String[] parmList;
-        parmList = getParmList("isname");
-
+    private static String op_Isname(String[] parmList) {
         if (Value.isName(parmList[0]))
             return "true";
         else
             return "false";
     }
 
-    private static String op_Eq() {
-        String[] parmList;
-        parmList = getParmList("eq");
-
+    private static String op_Eq(String[] parmList) {
         if (Value.isNumber(parmList[0]) && Value.isNumber(parmList[1])) {
             double left, right;
             left = Double.valueOf(parmList[1]);
@@ -434,10 +369,7 @@ public class Operation {
         }
     }
 
-    private static String op_Gt() {
-        String[] parmList;
-        parmList = getParmList("gt");
-
+    private static String op_Gt(String[] parmList) {
         if (Value.isNumber(parmList[0]) && Value.isNumber(parmList[1])) {
             double left, right;
             left = Double.valueOf(parmList[1]);
@@ -449,10 +381,7 @@ public class Operation {
         }
     }
 
-    private static String op_Lt() {
-        String[] parmList;
-        parmList = getParmList("lt");
-
+    private static String op_Lt(String[] parmList) {
         if (Value.isNumber(parmList[0]) && Value.isNumber(parmList[1])) {
             double left, right;
             left = Double.valueOf(parmList[1]);
@@ -464,10 +393,7 @@ public class Operation {
         }
     }
 
-    private static String op_And() {
-        String[] parmList;
-        parmList = getParmList("and");
-
+    private static String op_And(String[] parmList) {
         // 类似scheme，非false全部取true
         if (Value.isBool(parmList[0]) && Value.isBool(parmList[0])) {
             boolean oprand1, oprand2;
@@ -480,10 +406,7 @@ public class Operation {
         }
     }
 
-    private static String op_Or() {
-        String[] parmList;
-        parmList = getParmList("or");
-
+    private static String op_Or(String[] parmList) {
         // same as and
         if (Value.isBool(parmList[0]) && Value.isBool(parmList[0])) {
             boolean oprand1, oprand2;
