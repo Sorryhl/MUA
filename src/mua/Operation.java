@@ -103,10 +103,7 @@ public class Operation {
         // 获得list内容
         String[] runcode = runls.substring(1, runls.length() - 1).split(" ");
 
-        // 单元素表，只有一个word，没有op，返回该word
-        if (runcode.length == 1) {
-            return runcode[0];
-        }
+        // 删除单表处理，功能重复
 
         Processor processor = new Processor();
         String res = new String();

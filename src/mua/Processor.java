@@ -101,8 +101,11 @@ public class Processor {
     private String addValueProcess(String value) {
         // 错误检测
         if (opParmNumStack.empty()) {
-            System.out.println("ERROR: input oprand without operator!");
-            System.exit(-1);
+            // System.out.println("ERROR: input oprand without operator!");
+            // System.exit(-1);
+
+            // 改变执行逻辑，只有操作数则直接返回操作数，而非报错
+            return value;
         }
         nameStack.push(value);
         opParmNumStack.push(opParmNumStack.pop() - 1);
@@ -118,7 +121,8 @@ public class Processor {
 
             String res = Operation.Process(opStack.pop(), parmlist);
 
-            if (res != null && !opStack.empty()) {
+            // 只要返回值不为null，都进行入栈处理，空栈有返回机制
+            if (res != null) {
                 return addValueProcess(res);
             } else {
                 return res;
