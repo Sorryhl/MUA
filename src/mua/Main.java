@@ -11,7 +11,7 @@ public class Main {
     public static void main(String[] args) {
 
         int res;
-        while (true) {
+        while (input.hasNext()) {
             res = Parser.Process(input.next());
             if (res == -1)
                 break;

@@ -167,6 +167,7 @@ public class Operation {
 
     private static String op_Isword(String[] parmList) {
         // 个人李姐，非表都为字
+        // 10.21 修正：word不包括number和bool
         return String.valueOf(Value.isWord(parmList[0]));
     }
 
@@ -223,10 +224,8 @@ public class Operation {
         // 使用main中的input输入
         while (true) {
             res = Main.input.next();
-            if (res.charAt(0) == '\"') {
-                res = res.substring(1);
-                break;
-            } else if (Value.isNumber(res) || Value.isBool(res)) {
+            // 10.21 修改read功能，不需要再加“来识别word
+            if (Value.isWord(res) || Value.isNumber(res) || Value.isBool(res)) {
                 break;
             } else {
                 System.out.println("Your input in read is not a word or number! Please retry.");
@@ -347,8 +346,9 @@ public class Operation {
         return res;
     }
 
+    // 10.21 修改：isname, 按原为判断word，现修正为判断是否为Value表中的name
     private static String op_Isname(String[] parmList) {
-        if (Value.isName(parmList[0]))
+        if (Value.hasName(parmList[0]))
             return "true";
         else
             return "false";

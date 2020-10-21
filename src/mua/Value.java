@@ -23,7 +23,7 @@ public class Value {
 
     public static boolean eraseName(String name) {
         if (nameMap.containsKey(name)) {
-            nameMap.replace(name, "");
+            nameMap.remove(name);
             return true;
         }
 
@@ -39,8 +39,9 @@ public class Value {
     }
 
     // 只要不是list，value都属于word
+    // 10.21 修正：非list、非number、非bool
     public static boolean isWord(String s) {
-        return !isList(s);
+        return !(isList(s) || isBool(s) || isNumber(s));
     }
 
     // start with '['
@@ -75,10 +76,25 @@ public class Value {
         if (s.isEmpty())
             return false;
 
-        if (('0' <= s.charAt(0) && s.charAt(0) <= '9') || s.charAt(0) == '-')
-            return true;
+        if (!(('0' <= s.charAt(0) && s.charAt(0) <= '9') || s.charAt(0) == '-'))
+            return false;
 
-        return false;
+        // 修改判断number的逻辑
+        // 原逻辑会使1234dd这样的word变成数字
+
+        int dotcount = 0;
+        for (int i = 1; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            if (ch == '.')
+                dotcount++;
+            else if (!('0' <= ch && ch <= '9'))
+                return false;
+
+            if (dotcount > 1)
+                return false;
+        }
+
+        return true;
     }
 
     public static boolean isBool(String s) {

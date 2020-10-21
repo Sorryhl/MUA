@@ -5,7 +5,7 @@ import java.util.Queue;
 import java.util.Stack;
 
 public class Infix {
-    // TODO: 考虑 print (1 + print ((5 + 2) * mul 3 4))
+    // 考虑 print (1 + print ((5 + 2) * mul 3 4))
     // 想法：将Parser变成需要实例化，在run，if，主函数，中缀处分别实例化
 
     public static String infixProcess(String infixstr) {
@@ -19,21 +19,43 @@ public class Infix {
         String[] infixArr = infixstr.trim().split("\\s+");
         Queue<String> queue = new LinkedList<String>();
         String res = "initial";
+        boolean waitforoprand = true;
+        boolean nextisnegative = false;
         for (int i = 0; i < infixArr.length; i++) {
-            if (res.isEmpty() || !Infix.isInfixElement(infixArr[i])) {
+            if (res.isEmpty() || !isInfixElement(infixArr[i])) {
                 res = processor.Process(infixArr[i]);
             } else {
                 res = infixArr[i];
             }
 
             if (!res.isEmpty()) {
-                queue.offer(res);
+                // 负数
+                if (waitforoprand && res.equals("-")) {
+                    nextisnegative = true;
+                }
+                // 负数合并
+                else if (waitforoprand && nextisnegative) {
+                    queue.offer("-" + res);
+                    waitforoprand = false;
+                    nextisnegative = false;
+                } else if (waitforoprand) {
+                    queue.offer(res);
+                    if (!res.equals("("))
+                        waitforoprand = false;
+                }
+                // 操作
+                else {
+                    queue.offer(res);
+                    if (!res.equals(")"))
+                        waitforoprand = true;
+                }
             }
         }
 
         return calculate(queue);
     }
 
+    // 10.21 fix: add %
     private static String spiltOp(String s) {
         String res = new String();
         res = s.replace("+", " + ");
@@ -42,6 +64,7 @@ public class Infix {
         res = res.replace("/", " / ");
         res = res.replace("(", " ( ");
         res = res.replace(")", " ) ");
+        res = res.replace("%", " % ");
         return res;
     }
 
@@ -111,23 +134,23 @@ public class Infix {
                 String oprand1 = oprandStack.pop();
                 switch (op) {
                     case "+":
-                        res = String.valueOf(Double.valueOf(oprand1) + Double.valueOf(oprand2));
+                        res = String.valueOf(valueOf(oprand1) + valueOf(oprand2));
                         oprandStack.push(res);
                         break;
                     case "-":
-                        res = String.valueOf(Double.valueOf(oprand1) - Double.valueOf(oprand2));
+                        res = String.valueOf(valueOf(oprand1) - valueOf(oprand2));
                         oprandStack.push(res);
                         break;
                     case "*":
-                        res = String.valueOf(Double.valueOf(oprand1) * Double.valueOf(oprand2));
+                        res = String.valueOf(valueOf(oprand1) * valueOf(oprand2));
                         oprandStack.push(res);
                         break;
                     case "/":
-                        res = String.valueOf(Double.valueOf(oprand1) / Double.valueOf(oprand2));
+                        res = String.valueOf(valueOf(oprand1) / valueOf(oprand2));
                         oprandStack.push(res);
                         break;
                     case "%":
-                        int resint = Double.valueOf(oprand1).intValue() % Double.valueOf(oprand2).intValue();
+                        int resint = (int) valueOf(oprand1) % (int) valueOf(oprand2);
                         res = String.valueOf(resint);
                         oprandStack.push(res);
                         break;
@@ -138,6 +161,15 @@ public class Infix {
             }
         }
         return oprandStack.pop();
+    }
+
+    private static double valueOf(String oprand) {
+        boolean negative = false;
+        if (oprand.startsWith("-")) {
+            negative = true;
+            oprand = oprand.substring(1);
+        }
+        return negative ? -Double.valueOf(oprand) : Double.valueOf(oprand);
     }
 
     private static int getPriority(String op) {
@@ -161,7 +193,7 @@ public class Infix {
     }
 
     private static boolean isInfixOp(String s) {
-        return s.startsWith("+") || s.startsWith("-") || s.startsWith("*") || s.startsWith("/") || s.startsWith("%")
-                || s.startsWith("(") || s.startsWith(")");
+        return s.equals("+") || s.equals("-") || s.equals("*") || s.equals("/") || s.equals("%") || s.equals("(")
+                || s.equals(")");
     }
 }
