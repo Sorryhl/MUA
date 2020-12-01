@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Operation {
+
+    /** 内置运算符表 */
     public static Map<String, Integer> opMap = initMap();
 
     private static Map<String, Integer> initMap() {
@@ -38,6 +40,10 @@ public class Operation {
 
         return res;
     }
+
+    /** 全局变量 */
+    // 在Operation类中储存全局变量，Function中储存局部变量
+    public static Value globalvalue = new Value();
 
     public static String Process(final String op, String[] parmList) {
         switch (op) {
@@ -183,6 +189,7 @@ public class Operation {
         return "false";
     }
 
+    // TODO: 局部变量的make
     private static String op_Make(String[] parmList) {
         // make条件：前为name，且不与基本operation重名
         if (!Value.isName(parmList[1])) {
@@ -193,20 +200,23 @@ public class Operation {
             System.exit(-1);
         }
 
-        if (!Value.makeName(parmList[1], parmList[0])) {
+        // make到全局变量
+        if (!globalvalue.makeName(parmList[1], parmList[0])) {
             System.out.println("Make failed!");
         }
 
         return parmList[0];
     }
 
+    // TODO: 局部变量thing
     private static String op_Thing(String[] parmList) {
-        if (!Value.hasName(parmList[0])) {
+        // 全局变量判断
+        if (!globalvalue.hasName(parmList[0])) {
             System.out.println("ERROR: In thing, name \"" + parmList[0] + "\" has not bound to value.");
             System.exit(-1);
         }
 
-        return Value.getValue(parmList[0]);
+        return globalvalue.getValue(parmList[0]);
     }
 
     private static String op_Print(String[] parmList) {
@@ -336,19 +346,22 @@ public class Operation {
         return new String();
     }
 
+    // TODO: 局部变量清除
     private static String op_Erase(String[] parmList) {
         String res = "";
-        if (Value.hasName(parmList[0])) {
-            res = Value.getValue(parmList[0]);
-            Value.eraseName(parmList[0]);
+        // 全局变量清除
+        if (globalvalue.hasName(parmList[0])) {
+            res = globalvalue.getValue(parmList[0]);
+            globalvalue.eraseName(parmList[0]);
         }
 
         return res;
     }
 
+    // TODO: 局部变量判断
     // 10.21 修改：isname, 按原为判断word，现修正为判断是否为Value表中的name
     private static String op_Isname(String[] parmList) {
-        if (Value.hasName(parmList[0]))
+        if (globalvalue.hasName(parmList[0]))
             return "true";
         else
             return "false";

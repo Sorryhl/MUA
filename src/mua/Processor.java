@@ -53,6 +53,7 @@ public class Processor {
                 return readInfix(in);
             } else {
                 // 字母开头, 视为operator
+                // TODO: 加入函数处理部分
                 if (!Operation.opMap.containsKey(in)) {
                     throw new Exception("ERROR: No operations called \"" + in + "\"");
                 }
@@ -119,6 +120,7 @@ public class Processor {
                 parmlist[i] = nameStack.pop();
             }
 
+            // TODO: 执行函数功能
             String res = Operation.Process(opStack.pop(), parmlist);
 
             // 只要返回值不为null，都进行入栈处理，空栈有返回机制

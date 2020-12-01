@@ -5,9 +5,14 @@ import java.util.Map;
 
 public class Value {
 
-    private static Map<String, String> nameMap = new HashMap<String, String>();
+    // 12.1: 实例化Value类，分出全局与局部
+    private Map<String, String> nameMap;
 
-    public static boolean makeName(String name, String value) {
+    Value() {
+        nameMap = new HashMap<String, String>();
+    }
+
+    public boolean makeName(String name, String value) {
         try {
             if (nameMap.containsKey(name))
                 nameMap.replace(name, value);
@@ -21,7 +26,7 @@ public class Value {
 
     }
 
-    public static boolean eraseName(String name) {
+    public boolean eraseName(String name) {
         if (nameMap.containsKey(name)) {
             nameMap.remove(name);
             return true;
@@ -30,11 +35,11 @@ public class Value {
         return false;
     }
 
-    public static boolean hasName(String name) {
+    public boolean hasName(String name) {
         return nameMap.containsKey(name);
     }
 
-    public static String getValue(String name) {
+    public String getValue(String name) {
         return nameMap.get(name);
     }
 
