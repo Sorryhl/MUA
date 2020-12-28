@@ -37,15 +37,39 @@ public class Operation {
         res.put("isempty", 1);
         res.put("run", 1);
         res.put("if", 3);
+        res.put("return", 1);
+        res.put("export", 1);
 
         return res;
     }
 
     /** 全局变量 */
     // 在Operation类中储存全局变量，Function中储存局部变量
-    public static Value globalvalue = new Value();
+    // public static Value globalvalue = new Value();
 
-    public static String Process(final String op, String[] parmList) {
+    boolean infunc;
+    public Value localvalue;
+    public Function func;
+
+    Operation() {
+        localvalue = new Value();
+        infunc = false;
+        func = new Function();
+    }
+
+    Operation(Function f) {
+        localvalue = new Value();
+        infunc = false;
+        func = f;
+    }
+
+    Operation(boolean infunc, Value locValue, Function f) {
+        localvalue = locValue;
+        this.infunc = infunc;
+        func = f;
+    }
+
+    public String Process(final String op, String[] parmList) {
         switch (op) {
             case "make":
                 return op_Make(parmList);
@@ -95,6 +119,10 @@ public class Operation {
                 return op_Run(parmList);
             case "if":
                 return op_If(parmList);
+            case "return":
+                return op_Return(parmList);
+            case "export":
+                return op_Export(parmList);
 
             default:
                 break;
@@ -102,7 +130,27 @@ public class Operation {
         return new String();
     }
 
-    private static String RunProcess(String runls) {
+    private String op_Export(String[] parmList) {
+        if (!infunc) {
+            // System.out.println("ERROR: export out of function!");
+        }
+        if (!localvalue.hasName(parmList[0])) {
+            // System.out.println("ERROR: export a non-exist variable!");
+        }
+        Processor.globalvalue.makeName(parmList[0], localvalue.getValue(parmList[0]));
+        return localvalue.getValue(parmList[0]);
+    }
+
+    private String op_Return(String[] parmList) {
+        if (!infunc) {
+            // System.out.println("ERROR: return out of function!");
+        }
+
+        localvalue.makeName("@return", parmList[0]);
+        return parmList[0];
+    }
+
+    private String RunProcess(String runls) {
         // 执行空表，直接返回空表
         if (Value.value_is_Empty(runls))
             return "[]";
@@ -110,8 +158,7 @@ public class Operation {
         String[] runcode = runls.substring(1, runls.length() - 1).split(" ");
 
         // 删除单表处理，功能重复
-
-        Processor processor = new Processor();
+        Processor processor = new Processor(infunc, localvalue);
         String res = new String();
         for (int i = 0; i < runcode.length; i++) {
             res = processor.Process(runcode[i]);
@@ -119,7 +166,7 @@ public class Operation {
         return res;
     }
 
-    private static String op_If(String[] parmList) {
+    private String op_If(String[] parmList) {
         // [0] -> <list2>; [1] -> <list1>; [2] -> <bool>
 
         // 格式检查
@@ -128,7 +175,7 @@ public class Operation {
         // System.out.println("");
         // }
         if (!(Value.isList(parmList[1]) && Value.isList(parmList[0]))) {
-            System.out.println("ERROR: operator \"if\" needs lists as oprands!");
+            // System.out.println("ERROR: operator \"if\" needs lists as oprands!");
             System.exit(-1);
         }
 
@@ -146,42 +193,42 @@ public class Operation {
         return RunProcess(runlist);
     }
 
-    private static String op_Run(String[] parmList) {
+    private String op_Run(String[] parmList) {
         /*
          * 更新：重构Parser后，采用实例化一个新的processor来处理运行代码，在实现层面使得run操作有了返回值
          */
 
         if (!Value.isList(parmList[0])) {
-            System.out.println("ERROR: \"run\" needs a list as oprand!");
+            // System.out.println("ERROR: \"run\" needs a list as oprand!");
             System.exit(-1);
         }
 
         return RunProcess(parmList[0]);
     }
 
-    private static String op_Islist(String[] parmList) {
+    private String op_Islist(String[] parmList) {
         return String.valueOf(Value.isList(parmList[0]));
     }
 
-    private static String op_Isempty(String[] parmList) {
+    private String op_Isempty(String[] parmList) {
         return String.valueOf(Value.value_is_Empty(parmList[0]));
     }
 
-    private static String op_Isbool(String[] parmList) {
+    private String op_Isbool(String[] parmList) {
         return String.valueOf(Value.isBool(parmList[0]));
     }
 
-    private static String op_Isword(String[] parmList) {
+    private String op_Isword(String[] parmList) {
         // 个人李姐，非表都为字
         // 10.21 修正：word不包括number和bool
         return String.valueOf(Value.isWord(parmList[0]));
     }
 
-    private static String op_Isnumber(String[] parmList) {
+    private String op_Isnumber(String[] parmList) {
         return String.valueOf(Value.isNumber(parmList[0]));
     }
 
-    private static String op_Not(String[] parmList) {
+    private String op_Not(String[] parmList) {
         // 类scheme，非false都视为true
         if (parmList[0].equals("false"))
             return "true";
@@ -190,36 +237,63 @@ public class Operation {
     }
 
     // TODO: 局部变量的make
-    private static String op_Make(String[] parmList) {
+    private String op_Make(String[] parmList) {
         // make条件：前为name，且不与基本operation重名
         if (!Value.isName(parmList[1])) {
-            System.out.println("ERROR: In make, \"" + parmList[1] + "\" is not a name.");
+            // System.out.println("ERROR: In make, \"" + parmList[1] + "\" is not a name.");
             System.exit(-1);
         } else if (Operation.opMap.containsKey(parmList[1])) {
-            System.out.println("ERROR: In make, \"" + parmList[1] + "\" is a keyword!");
+            // System.out.println("ERROR: In make, \"" + parmList[1] + "\" is a keyword!");
             System.exit(-1);
         }
 
         // make到全局变量
-        if (!globalvalue.makeName(parmList[1], parmList[0])) {
-            System.out.println("Make failed!");
+        if (!infunc) {
+            if (!Processor.globalvalue.makeName(parmList[1], parmList[0])) {
+                // System.out.println("Make failed!");
+            }
+            if (func.isOldFunction(parmList[1])) {
+                func.rewriteFunc(parmList[1], parmList[0]);
+            }
+        } else {
+            if (!localvalue.makeName(parmList[1], parmList[0])) {
+                // System.out.println("Make failed!");
+            }
+            if (func.isOldFunction(parmList[1])) {
+                func.rewriteFunc(parmList[1], parmList[0]);
+            }
         }
 
         return parmList[0];
     }
 
     // TODO: 局部变量thing
-    private static String op_Thing(String[] parmList) {
-        // 全局变量判断
-        if (!globalvalue.hasName(parmList[0])) {
-            System.out.println("ERROR: In thing, name \"" + parmList[0] + "\" has not bound to value.");
-            System.exit(-1);
+    private String op_Thing(String[] parmList) {
+        if (!infunc) {
+
+            // 全局变量判断
+            if (!Processor.globalvalue.hasName(parmList[0])) {
+                // System.out.println("ERROR: In thing, name \"" + parmList[0] + "\" has not
+                // bound to value.");
+                // System.exit(-1);
+            }
+            return Processor.globalvalue.getValue(parmList[0]);
+        } else {
+            if (localvalue.hasName(parmList[0])) {
+                return localvalue.getValue(parmList[0]);
+            } else if (Processor.globalvalue.hasName(parmList[0])) {
+                return Processor.globalvalue.getValue(parmList[0]);
+            } else {
+                // System.out.println("ERROR: In thing, name \"" + parmList[0] + "\" has not
+                // bound to value.");
+                // System.exit(-1);
+            }
+            return "";
         }
 
-        return globalvalue.getValue(parmList[0]);
     }
 
-    private static String op_Print(String[] parmList) {
+    private String op_Print(String[] parmList) {
         if (parmList[0].isEmpty())
             System.out.println("null");
         else
@@ -228,7 +302,7 @@ public class Operation {
         return parmList[0];
     }
 
-    private static String op_Read() {
+    private String op_Read() {
         String res;
 
         // 使用main中的input输入
@@ -238,16 +312,17 @@ public class Operation {
             if (Value.isWord(res) || Value.isNumber(res) || Value.isBool(res)) {
                 break;
             } else {
-                System.out.println("Your input in read is not a word or number! Please retry.");
+                // System.out.println("Your input in read is not a word or number! Please
+                // retry.");
             }
         }
 
         return res;
     }
 
-    private static String op_Add(String[] parmList) {
+    private String op_Add(String[] parmList) {
         if (!Value.isNumber(parmList[0]) || !Value.isNumber(parmList[1])) {
-            System.out.println("ERROR: In add, a vulue is not a number!");
+            // System.out.println("ERROR: In add, a vulue is not a number!");
             System.exit(-1);
         }
 
@@ -258,15 +333,15 @@ public class Operation {
             res = m + n;
             return String.valueOf(res);
         } catch (Exception e) {
-            System.out.println("ERROR: In add, a vulue is not a number!");
+            // System.out.println("ERROR: In add, a vulue is not a number!");
             System.exit(-1);
         }
         return new String();
     }
 
-    private static String op_Sub(String[] parmList) {
+    private String op_Sub(String[] parmList) {
         if (!Value.isNumber(parmList[0]) || !Value.isNumber(parmList[1])) {
-            System.out.println("ERROR: In sub, a vulue is not a number!");
+            // System.out.println("ERROR: In sub, a vulue is not a number!");
             System.exit(-1);
         }
 
@@ -277,15 +352,15 @@ public class Operation {
             res = n - m;
             return String.valueOf(res);
         } catch (Exception e) {
-            System.out.println("ERROR: In sub, a vulue is not a number!");
+            // System.out.println("ERROR: In sub, a vulue is not a number!");
             System.exit(-1);
         }
         return new String();
     }
 
-    private static String op_Mul(String[] parmList) {
+    private String op_Mul(String[] parmList) {
         if (!Value.isNumber(parmList[0]) || !Value.isNumber(parmList[1])) {
-            System.out.println("ERROR: In mul, a vulue is not a number!");
+            // System.out.println("ERROR: In mul, a vulue is not a number!");
             System.exit(-1);
         }
 
@@ -296,15 +371,15 @@ public class Operation {
             res = m * n;
             return String.valueOf(res);
         } catch (Exception e) {
-            System.out.println("ERROR: In mul, a vulue is not a number!");
+            // System.out.println("ERROR: In mul, a vulue is not a number!");
             System.exit(-1);
         }
         return new String();
     }
 
-    private static String op_Div(String[] parmList) {
+    private String op_Div(String[] parmList) {
         if (!Value.isNumber(parmList[0]) || !Value.isNumber(parmList[1])) {
-            System.out.println("ERROR: In div, a vulue is not a number!");
+            // System.out.println("ERROR: In div, a vulue is not a number!");
             System.exit(-1);
         }
 
@@ -315,15 +390,15 @@ public class Operation {
             res = n / m;
             return String.valueOf(res);
         } catch (Exception e) {
-            System.out.println("ERROR: In div, a vulue is not a number!");
+            // System.out.println("ERROR: In div, a vulue is not a number!");
             System.exit(-1);
         }
         return new String();
     }
 
-    private static String op_Mod(String[] parmList) {
+    private String op_Mod(String[] parmList) {
         if (!Value.isNumber(parmList[0]) || !Value.isNumber(parmList[1])) {
-            System.out.println("ERROR: In mod, a vulue is not a number!");
+            // System.out.println("ERROR: In mod, a vulue is not a number!");
             System.exit(-1);
         }
 
@@ -337,22 +412,35 @@ public class Operation {
             res = n % m;
             return String.valueOf(res);
         } catch (ArithmeticException e) {
-            System.out.println("ERROR: In mod, there is a arithmetic expection.");
+            // System.out.println("ERROR: In mod, there is a arithmetic expection.");
             System.exit(-1);
         } catch (Exception e) {
-            System.out.println("ERROR: In mod, a vulue is not a integer number!");
+            // System.out.println("ERROR: In mod, a vulue is not a integer number!");
             System.exit(-1);
         }
         return new String();
     }
 
     // TODO: 局部变量清除
-    private static String op_Erase(String[] parmList) {
+    private String op_Erase(String[] parmList) {
         String res = "";
-        // 全局变量清除
-        if (globalvalue.hasName(parmList[0])) {
-            res = globalvalue.getValue(parmList[0]);
-            globalvalue.eraseName(parmList[0]);
+        // 函数内
+        if (infunc) {
+            // 先清除局部变量
+            if (localvalue.hasName(parmList[0])) {
+                res = localvalue.getValue(parmList[0]);
+                localvalue.eraseName(parmList[0]);
+            } else if (Processor.globalvalue.hasName(parmList[0])) {
+                // 没有则清除全局变量
+                res = Processor.globalvalue.getValue(parmList[0]);
+                Processor.globalvalue.eraseName(parmList[0]);
+            }
+        } else {
+            // 清除全局
+            if (Processor.globalvalue.hasName(parmList[0])) {
+                res = Processor.globalvalue.getValue(parmList[0]);
+                Processor.globalvalue.eraseName(parmList[0]);
+            }
         }
 
         return res;
@@ -360,14 +448,19 @@ public class Operation {
 
     // TODO: 局部变量判断
     // 10.21 修改：isname, 按原为判断word，现修正为判断是否为Value表中的name
-    private static String op_Isname(String[] parmList) {
-        if (globalvalue.hasName(parmList[0]))
+    private String op_Isname(String[] parmList) {
+        boolean isname = false;
+        if (infunc) {
+            isname = isname | localvalue.hasName(parmList[0]);
+        }
+        isname = isname | Processor.globalvalue.hasName(parmList[0]);
+        if (isname)
             return "true";
         else
             return "false";
     }
 
-    private static String op_Eq(String[] parmList) {
+    private String op_Eq(String[] parmList) {
         if (Value.isNumber(parmList[0]) && Value.isNumber(parmList[1])) {
             double left, right;
             left = Double.valueOf(parmList[1]);
@@ -379,7 +472,7 @@ public class Operation {
         }
     }
 
-    private static String op_Gt(String[] parmList) {
+    private String op_Gt(String[] parmList) {
         if (Value.isNumber(parmList[0]) && Value.isNumber(parmList[1])) {
             double left, right;
             left = Double.valueOf(parmList[1]);
@@ -391,7 +484,7 @@ public class Operation {
         }
     }
 
-    private static String op_Lt(String[] parmList) {
+    private String op_Lt(String[] parmList) {
         if (Value.isNumber(parmList[0]) && Value.isNumber(parmList[1])) {
             double left, right;
             left = Double.valueOf(parmList[1]);
@@ -403,7 +496,7 @@ public class Operation {
         }
     }
 
-    private static String op_And(String[] parmList) {
+    private String op_And(String[] parmList) {
         // 类似scheme，非false全部取true
         if (Value.isBool(parmList[0]) && Value.isBool(parmList[0])) {
             boolean oprand1, oprand2;
@@ -416,7 +509,7 @@ public class Operation {
         }
     }
 
-    private static String op_Or(String[] parmList) {
+    private String op_Or(String[] parmList) {
         // same as and
         if (Value.isBool(parmList[0]) && Value.isBool(parmList[0])) {
             boolean oprand1, oprand2;

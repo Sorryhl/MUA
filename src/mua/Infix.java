@@ -8,11 +8,11 @@ public class Infix {
     // 考虑 print (1 + print ((5 + 2) * mul 3 4))
     // 想法：将Parser变成需要实例化，在run，if，主函数，中缀处分别实例化
 
-    public static String infixProcess(String infixstr) {
+    public static String infixProcess(String infixstr, boolean infunc, Value locValue) {
         // 去掉最外层表示中缀表达式整体的符号
         infixstr = infixstr.substring(1, infixstr.length() - 1);
 
-        Processor processor = new Processor();
+        Processor processor = new Processor(infunc, locValue);
         // 分割表达式, 使得各种操作符都不与数字相连
         infixstr = spiltOp(infixstr);
         // 首先整体进行扫描，执行前缀表达式，将执行结果取代原前缀表达式

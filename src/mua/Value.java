@@ -111,7 +111,7 @@ public class Value {
 
     public static boolean value_is_Empty(String s) {
         if (isList(s)) {
-            return s.substring(1, s.length() - 1).isBlank();
+            return s.substring(1, s.length() - 1).isEmpty();
         } else {
             return s.isEmpty();
         }
